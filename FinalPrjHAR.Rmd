@@ -1,0 +1,56 @@
+---
+title: "FinalHAR"
+author: "MD"
+date: "January 23, 2015"
+output: html_document
+---
+The purpose of this project is to build a model that can predict how well a weight-lifting 
+exercise was perform. The data was obtained from the HAR project specifically from the Weigt Lifting Exercise Data Set, made available by the authors of the paper Qualitative Activity Recognition of Weight Lifting Exercises(1).
+
+```{r}
+library(caret);
+Dhar<-read.csv("pml-training.csv")
+testing<-read.csv("pml-testing.csv")
+
+# Clean the data by removing columns with NA
+Dhar<-Dhar[,colSums(is.na(Dhar)) == 0]
+
+# Deciding which are the predictors to include
+nsv<-nearZeroVar(Dhar,saveMetrics=TRUE)
+# Eliminate variables that add little variability
+predictor<-row.names(nsv[nsv$nzv == FALSE,])
+Dhar<-Dhar[,predictor]
+Dhar<-Dhar[,-1]
+
+```
+
+Cross validation obtain training and test data for model fit
+
+```{r}
+set.seed(1000)
+indx<-createDataPartition(y=Dhar$classe,p=0.7,list=FALSE)
+trainingM<-Dhar[indx,]
+testingM<-Dhar[-indx,]
+```
+
+Fit the model using random forests
+Test the model with the test set
+```{r}
+modfit<-train(classe~.,method="rf",data=trainingM,prox=TRUE,ntree=10)
+print(modfit$finalModel)
+```
+
+Use the model to cross validate with testing
+```{r}
+Ptest<-predict(modfit,newdata=testingM)
+```
+
+Predict with the testing data
+```{r}
+answers = predict(modfit,newdata=testing)
+print(answers)
+```
+
+Reference
+
+1) Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
